@@ -2,6 +2,8 @@
 
 It is a basic NodeJS web application exposing REST API that creates and stores user parameters in [Redis database](https://redis.io/).
 
+[![CI/CD Pipeline](https://github.com/Smokie1771/DevOps/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Smokie1771/DevOps/actions)
+
 ## Functionality
 
 1. Start a web server

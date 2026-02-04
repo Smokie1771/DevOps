@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: ece-userapi
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: redis
+          property: port
+
+  - type: redis
+    name: redis
+    ipAllowList: []
+    plan: free

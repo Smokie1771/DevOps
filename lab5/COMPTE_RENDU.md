@@ -9,10 +9,10 @@ L'objectif de ce lab était d'implémenter un **pipeline CI/CD complet** pour au
 - Configurer un service container Redis pour les tests
 - Pratiquer le workflow de développement avec Pull Requests
 
-### Part 2 : Continuous Delivery avec Heroku
-- Créer et configurer une application sur Heroku
+### Part 2 : Continuous Delivery avec Render
+- Créer et configurer une application sur Render
 - Synchroniser l'application avec le repository GitHub
-- Automatiser le déploiement vers Heroku après les tests réussis
+- Automatiser le déploiement vers Render après les tests réussis
 
 ## Application dans le Monde Réel
 
@@ -47,7 +47,7 @@ Plan → Code → Build → TEST (CI) → DEPLOY (CD) → Operate → Monitor �
 ### Continuous Delivery/Deployment (CD)
 - **Position** : Entre "Test" et "Operate"
 - **Rôle** : Automatiser le déploiement en production
-- **Outils** : Heroku, AWS, Azure, Google Cloud
+- **Outils** : Render, Heroku, AWS, Azure, Google Cloud
 
 **Justification** :
 Le CI/CD automatise le pont entre le développement et la production, permettant un **feedback loop rapide** et des **déploiements fiables**.
@@ -111,20 +111,34 @@ db.exists(user.username, (err, exists) => {
 chai.expect(res).to.have.status(404) // au lieu de 400
 ```
 
-### Problème 3 : Configuration de Heroku pour le déploiement
+### Problème 3 : Configuration de Render pour le déploiement
 
-**Défi** : Configurer le déploiement automatique vers Heroku depuis GitHub Actions
+**Défi** : Configurer le déploiement automatique vers Render depuis GitHub Actions
 
 **Résolution** :
-1. **Création du Procfile** pour indiquer à Heroku comment démarrer l'app :
-   ```
-   web: node src/index.js
+1. **Création du fichier render.yaml** pour la configuration Infrastructure-as-Code :
+   ```yaml
+   services:
+     - type: web
+       name: ece-userapi
+       env: node
+       buildCommand: npm install
+       startCommand: npm start
+       envVars:
+         - key: REDIS_HOST
+           fromService:
+             type: redis
+             name: redis
+             property: host
+   
+     - type: redis
+       name: redis
+       plan: free
    ```
 
 2. **Ajout des secrets GitHub** (nécessaire pour vous) :
-   - `HEROKU_API_KEY` : Votre clé API Heroku
-   - `HEROKU_APP_NAME` : Nom de votre app sur Heroku
-   - `HEROKU_EMAIL` : Votre email Heroku
+   - `RENDER_SERVICE_ID` : L'ID de votre service Render
+   - `RENDER_API_KEY` : Votre clé API Render
 
 3. **Configuration du workflow de déploiement** :
 ```yaml
@@ -135,18 +149,23 @@ deploy:
   
   steps:
   - uses: actions/checkout@v3
-  - name: Deploy to Heroku
-    uses: akhileshns/heroku-deploy@v3.13.15
+  - name: Deploy to Render
+    uses: johnbeynon/render-deploy-action@v0.0.8
     with:
-      heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-      heroku_app_name: ${{secrets.HEROKU_APP_NAME}}
-      heroku_email: ${{secrets.HEROKU_EMAIL}}
+      service-id: ${{secrets.RENDER_SERVICE_ID}}
+      api-key: ${{secrets.RENDER_API_KEY}}
 ```
 
+**Avantages de Render sur Heroku** :
+- ✅ Redis gratuit inclus (pas besoin de carte bancaire)
+- ✅ Configuration via render.yaml (Infrastructure as Code)
+- ✅ Déploiements automatiques depuis Git
+- ✅ SSL gratuit et CDN inclus
+
 **Liens consultés** :
-- https://github.com/marketplace/actions/deploy-to-heroku
-- https://devcenter.heroku.com/articles/getting-started-with-nodejs
-- https://devcenter.heroku.com/articles/procfile
+- https://render.com/docs/deploy-node-express-app
+- https://render.com/docs/infrastructure-as-code
+- https://github.com/marketplace/actions/render-deploy-action
 
 ### Problème 4 : Test de la fonctionnalité "avoid creating existing user"
 
@@ -195,11 +214,12 @@ User REST API - GET (2 tests) ✔
    - CI exécutée automatiquement
    - Merge vers `develop`
 
-### Part 2 : CD avec Heroku ✅
+### Part 2 : CD avec Render ✅
 
-1. ✅ **Configuration Heroku** :
-   - `Procfile` créé pour démarrage de l'app
+1. ✅ **Configuration Render** :
+   - `render.yaml` créé pour Infrastructure as Code
    - `package.json` mis à jour avec engines Node.js
+   - Redis service configuré dans render.yaml
    - Workflow de déploiement ajouté
 
 2. ✅ **Déploiement automatisé** :
@@ -211,7 +231,7 @@ User REST API - GET (2 tests) ✔
 
 #### Nouveaux fichiers :
 - `.github/workflows/ci-cd.yml` - Pipeline CI/CD complet
-- `Procfile` - Configuration Heroku
+- `render.yaml` - Configuration Render (Infrastructure as Code)
 - `README.md` - Badge CI/CD ajouté
 
 #### Fichiers modifiés :
@@ -246,15 +266,17 @@ User REST API - GET (2 tests) ✔
 │              GitHub Actions (CD)                            │
 │  ┌────────────────────────────────────────────────────┐    │
 │  │  1. Checkout code                                  │    │
-│  │  2. Deploy to Heroku                              │    │
+│  │  2. Deploy to Render                              │    │
 │  │     - Build app                                   │    │
-│  │     - Start with Procfile                         │    │
+│  │     - Start with npm start                        │    │
+│  │     - Connect to Redis service                    │    │
 │  └────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              Heroku (Production)                            │
-│         https://your-app.herokuapp.com                      │
+│              Render (Production)                            │
+│         https://your-app.onrender.com                       │
+│         Redis included (free tier)                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -310,37 +332,37 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-    - name: Deploy to Heroku
-      uses: akhileshns/heroku-deploy@v3.13.15
+    - name: Deploy to Render
+      uses: johnbeynon/render-deploy-action@v0.0.8
       with:
-        heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-        heroku_app_name: ${{secrets.HEROKU_APP_NAME}}
-        heroku_email: ${{secrets.HEROKU_EMAIL}}
+        service-id: ${{secrets.RENDER_SERVICE_ID}}
+        api-key: ${{secrets.RENDER_API_KEY}}
 ```
 
-## Instructions pour Finaliser le Déploiement Heroku
+## Instructions pour Finaliser le Déploiement Render
 
 ### Étapes à suivre pour vous :
 
-1. **Créer un compte Heroku** (si pas déjà fait) :
-   - Aller sur https://heroku.com
-   - S'inscrire gratuitement
+1. **Créer un compte Render** (si pas déjà fait) :
+   - Aller sur https://render.com
+   - S'inscrire gratuitement (pas besoin de carte bancaire)
 
-2. **Créer une application sur Heroku** :
-   - Aller sur https://dashboard.heroku.com/new-app
+2. **Créer une application sur Render** :
+   - Dashboard → New → Blueprint
+   - Connecter votre repository GitHub
+   - Render détectera automatiquement le fichier `render.yaml`
    - Nom : choisir un nom unique (ex: `ece-userapi-votrenom`)
-   - Région : Europe
 
-3. **Obtenir votre API Key Heroku** :
-   - Account Settings → API Key → Reveal
+3. **Obtenir votre API Key et Service ID** :
+   - Account Settings → API Keys → Create API Key
    - Copier la clé
+   - Dans votre service → Settings → copier le Service ID (dans l'URL)
 
 4. **Ajouter les secrets dans GitHub** :
    - GitHub repo → Settings → Secrets and variables → Actions
    - New repository secret :
-     - `HEROKU_API_KEY` : votre clé API
-     - `HEROKU_APP_NAME` : nom de votre app
-     - `HEROKU_EMAIL` : votre email Heroku
+     - `RENDER_API_KEY` : votre clé API
+     - `RENDER_SERVICE_ID` : votre Service ID
 
 5. **Push vers GitHub** :
    ```bash
@@ -349,14 +371,17 @@ jobs:
 
 6. **Vérifier le déploiement** :
    - GitHub → Actions → Observer le workflow
-   - Une fois terminé, visiter `https://votre-app.herokuapp.com`
+   - Render Dashboard → Observer le déploiement
+   - Une fois terminé, visiter `https://votre-app.onrender.com`
 
-### Note sur Redis sur Heroku :
+### Avantages de Render :
 
-Le lab mentionne que Redis sur Heroku nécessite une carte bancaire. Pour cette raison :
-- L'application affichera "Hello World!" sur la page d'accueil ✅
-- Les endpoints `/user` ne fonctionneront pas sans Redis ❌
-- Mais le pipeline CI/CD sera fonctionnel ✅
+- ✅ **Redis gratuit inclus** (contrairement à Heroku qui nécessite une carte bancaire)
+- ✅ **Infrastructure as Code** via render.yaml
+- ✅ **Déploiements automatiques** depuis GitHub
+- ✅ **SSL/TLS gratuit** pour tous les services
+- ✅ **Logs en temps réel**
+- ✅ **Zero downtime deployments**
 
 ## Conclusion
 

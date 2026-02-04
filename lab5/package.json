@@ -24,5 +24,9 @@
   },
   "mocha": {
     "timeout": 10000
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": ">=9.0.0"
   }
 }

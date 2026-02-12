@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"name": "DevOps",
+			"path": ".."
+		},
+		{
+			"name": "lab",
+			"path": "../../../../Downloads/ece-devops-2026-spring-main (1)/ece-devops-2026-spring-main/04.continuous-testing/lab"
+		}
+	],
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			"wsl": true,
+			"Set-Location": true
+		}
+	}
+}

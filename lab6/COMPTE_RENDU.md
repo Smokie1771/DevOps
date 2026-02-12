@@ -732,27 +732,6 @@ Paramètres utilisés :
 - `return_content: yes` : Récupère le body de la réponse
 - `register` : Stocke le résultat dans une variable Ansible
 
-### Cas d'usage : Détection de services défaillants
-
-Le lab mentionne un **bonus task** : afficher uniquement les services défaillants dans le readiness check.
-
-**Test de défaillance** (pour info) :
-```bash
-# Arrêter Redis
-sudo gitlab-ctl stop redis
-
-# Re-tester le readiness check
-curl http://127.0.0.1:8080/-/readiness
-# Résultat attendu : {"status":"failed","redis_check":[{"status":"failed"}]}
-```
-
-Cette fonctionnalité est cruciale en production pour :
-- Identifier rapidement quel service pose problème
-- Automatiser les alertes
-- Faciliter le debugging
-
----
-
 ## Finalité Globale du Lab
 
 ### ✅ L'objectif COMPLET du lab est REMPLI
